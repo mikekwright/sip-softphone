@@ -1,25 +1,25 @@
-box:
-  id: openjdk
-  tag: 8
+box: java
 
 build:
   steps:
-    - xenoterracide/maven:
-      goals: clean test
+    - script:
+      name: Build / Test
+      code: |
+        ./gradlew test codeCoverageReport
 
     - script:
       name: Create new git tag
       code: |
         echo -e "This is where we create the tag"
 
-    - xenoterracide/maven:
-      goals: jacoco:report coveralls:report deploy
-
-    - xenoterracide/maven:
-      goals: site
-
     - script:
-        name: Upload reports
-        code: |
-          ./push_reports
-
+      name: Deploy to codecov
+      code: |
+        bash <(curl -s https://codecov.io/bash)
+    
+deploy:
+  steps:
+    - script:
+      name: Deploy to Maven Central
+      code: |
+        echo -e "This is where we deploy to maven central"
