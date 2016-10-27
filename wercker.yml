@@ -1,0 +1,31 @@
+box:
+  id: maven
+  tag: 3.3.9-jdk-8
+
+build:
+  steps:
+    - script:
+      name: Compile and Unit Test
+      code: |
+        mvn clean test -Dmaven.test.failure.ignore=false test
+
+    - script:
+        name: Create new git tag
+        code: |
+            /usr/bin/get_component_version
+
+    - script:
+      name: Install and Deploy
+      code: |
+        mvn -DskipTests=true -DdeployAtEnd test jacoco:report coveralls:report deploy
+
+    - script:
+      name: Generate reports
+      code: |
+        mvn site
+
+    - script:
+        name: Upload reports
+        code: |
+          ./push_reports
+
