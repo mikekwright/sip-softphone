@@ -1,28 +1,22 @@
 box:
-  id: maven
-  tag: 3.3.9-jdk-8
+  id: openjdk
+  tag: 8
 
 build:
   steps:
-    - script:
-      name: Compile and Unit Test
-      code: |
-        mvn clean test -Dmaven.test.failure.ignore=false test
+    - xenoterracide/maven:
+      goals: clean test
 
     - script:
-        name: Create new git tag
-        code: |
-            /usr/bin/get_component_version
-
-    - script:
-      name: Install and Deploy
+      name: Create new git tag
       code: |
-        mvn -DskipTests=true -DdeployAtEnd test jacoco:report coveralls:report deploy
+        echo -e "This is where we create the tag"
 
-    - script:
-      name: Generate reports
-      code: |
-        mvn site
+    - xenoterracide/maven:
+      goals: jacoco:report coveralls:report deploy
+
+    - xenoterracide/maven:
+      goals: site
 
     - script:
         name: Upload reports
