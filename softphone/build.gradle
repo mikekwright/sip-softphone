@@ -1,0 +1,7 @@
+description = """Sip Softphone"""
+
+dependencies {
+    compile group: 'javax.sip', name: 'jain-sip-api', version:'1.2.1.4'
+    compile group: 'javax.sip', name: 'jain-sip-ri', version:'1.2.1.4'
+}
+

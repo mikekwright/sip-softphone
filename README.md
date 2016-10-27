@@ -1,10 +1,8 @@
 Java Sip Softphone
 ==============================================================
 
-[![Coverage Status](https://coveralls.io/repos/github/alianza-dev/java-sip-softphone/badge.svg?branch=master)](https://coveralls.io/github/alianza-dev/java-sip-softphone?branch=master)    
-[![wercker status](https://app.wercker.com/status/c5620ebe20ac85b50f4c3cdaa83196b2/s/master "wercker status")](https://app.wercker.com/project/byKey/c5620ebe20ac85b50f4c3cdaa83196b2)    
-
-[Project Documentation](https://alianza-dev.github.io/java-sip-softphone/)      
+[![codecov](https://codecov.io/gh/mikekwright/sip-softphone/branch/master/graph/badge.svg)](https://codecov.io/gh/mikekwright/sip-softphone)
+[![wercker status](https://app.wercker.com/status/d711a67ff47f19173d4fce1052e1d6ad/s/master "wercker status")](https://app.wercker.com/project/byKey/d711a67ff47f19173d4fce1052e1d6ad)
 
 ## Description
 
@@ -28,11 +26,10 @@ This library is stored in maven central and can be referenced using the below ma
 entry:  
 
         <dependency>
-          <groupId>com.alianza.sip</groupId>
+          <groupId>sip</groupId>
           <artifactId>softphone</artifactId>
           <version>${softphone.version}</artifactId>
         </dependency>
-
 
 
 ## References
