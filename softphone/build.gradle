@@ -3,5 +3,22 @@ description = """Sip Softphone"""
 dependencies {
     compile group: 'javax.sip', name: 'jain-sip-api', version:'1.2.1.4'
     compile group: 'javax.sip', name: 'jain-sip-ri', version:'1.2.1.4'
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+}
+buildscript {
+    ext.kotlin_version = '1.0.4'
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+apply plugin: 'kotlin'
+repositories {
+    mavenCentral()
+}
+sourceSets {
+    main.java.srcDirs += 'src/main/kotlin'
 }
 
