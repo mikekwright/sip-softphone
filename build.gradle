@@ -1,3 +1,5 @@
+description = """Sip Softphone - Parent"""
+
 buildscript {
   ext.kotlin_version = '1.0.4'
 
@@ -11,15 +13,16 @@ buildscript {
   dependencies {
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     classpath 'gradle.plugin.com.github.maiflai:gradle-scalatest:0.14'
+    classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
   }
 }
-
 
 allprojects  {
   apply plugin: 'maven'
   apply plugin: 'jacoco'
   apply plugin: 'com.github.maiflai.scalatest'
-  group = 'sip'
+
+  group = 'com.github.mikekwright'
   version = '1.0-SNAPSHOT'
 
   repositories {
@@ -27,6 +30,10 @@ allprojects  {
     maven {
       url "https://plugins.gradle.org/m2"
     }
+  }
+
+  dependencies {
+    compile group: 'org.scala-lang', name: 'scala-library', version: '2.11.5'
   }
 }
 
@@ -41,7 +48,12 @@ subprojects {
   	options.encoding = 'UTF-8'
   }
 
+  sourceSets {
+    main.java.srcDirs += 'src/main/kotlin'
+  }
+
   dependencies {
+    compile group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib', version: kotlin_version
     compile group: 'javax.inject', name: 'javax.inject', version:'1'
     compile group: 'org.slf4j', name: 'slf4j-api', version:'1.7.21'
     compile group: 'log4j', name: 'log4j', version:'1.2.17'
@@ -70,12 +82,9 @@ task codeCoverageReport(type: JacocoReport) {
 codeCoverageReport.dependsOn {
   subprojects*.test
 }
-repositories {
-    mavenCentral()
-}
-dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-}
-sourceSets {
-    main.java.srcDirs += 'src/main/kotlin'
-}
+
+//This is to fix Intellij
+ScalaCompileOptions.metaClass.daemonServer = true
+ScalaCompileOptions.metaClass.fork = true
+ScalaCompileOptions.metaClass.useAnt = false
+ScalaCompileOptions.metaClass.useCompileDaemon = false
