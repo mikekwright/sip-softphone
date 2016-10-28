@@ -1,2 +1,2 @@
 rootProject.name = 'softphone'
-include 'softphone'
+include 'lib'
