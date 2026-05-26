@@ -1,41 +1,173 @@
-Java Sip Softphone
-==============================================================
+# SIP Softphone
 
-[![codecov](https://codecov.io/gh/mikekwright/sip-softphone/branch/master/graph/badge.svg)](https://codecov.io/gh/mikekwright/sip-softphone)
-[![wercker status](https://app.wercker.com/status/d711a67ff47f19173d4fce1052e1d6ad/s/master "wercker status")](https://app.wercker.com/project/byKey/d711a67ff47f19173d4fce1052e1d6ad)
+This repository is being restarted as a Java-first SIP softphone platform with two primary entry points:
 
-## Description
+- an stdio-only MCP server for LLM-driven phone workflows
+- a functional terminal UI that exercises the same shared softphone API
 
-Library that can be used as a sip softphone that will support basic operations
-such as
+## Project Status
 
-1. Call to client
-2. Incoming call from other client
-3. DTMF tones
-4. IVR
+This is a modernization and restart effort.
 
-As well as more advanced features such as:  
+The current repository still contains a legacy Gradle multi-project layout with `lib/` and `sample-client/`, but the target system is broader than the original library-oriented codebase. The existing code is migration input, not the final architecture.
 
-1. Call Transferring
-2. Call Hold
-3. Call Wait
+## Purpose
 
-## Usage
+The project goal is to provide a SIP softphone runtime that can be automated by an MCP client while also remaining usable through a human-operated terminal interface.
 
-This library is stored in maven central and can be referenced using the below maven
-entry:  
+The shared runtime must support:
 
-        <dependency>
-          <groupId>sip</groupId>
-          <artifactId>softphone</artifactId>
-          <version>${softphone.version}</artifactId>
-        </dependency>
+- making a call
+- receiving live call updates
+- capturing speech from the remote side and returning text
+- accepting text from the client and injecting it into the active call
+- hanging up the call
 
+## What This Project Is
 
-## References
+- a Java-first softphone modernization effort
+- a shared call-control and event API for multiple front ends
+- a Netty-centered runtime direction
+- a repository that will grow specs and scenario-driven workflow documentation
 
-* [Jain Sip PDF Slides](http://www.oracle.com/technetwork/java/jain-sip-tutorial-149998.pdf)    
-* [jain-sip SDP Test](https://github.com/rkday/jain-sip/blob/master/branches/3263-support/src/test/gov/nist/javax/sdp/parser/SdpParserTest.java)    
-* [jain-sip Simple Call Setup](https://github.com/usnistgov/jsip/blob/master/src/examples/android/simplecallsetup/Shootist.java)    
-* [Sip Registration using Jain](http://vkslabs.com/sip-register-request-using-jain-sip/)     
-* [Jain sip for Android Example](https://github.com/RestComm/restcomm-android-sdk/tree/b1f1e7309b1f1a1d7e9aa8d5aad7b842d8691371/Examples/JAIN%20SIP)  
+## What This Project Is Not
+
+- not primarily a reusable published SIP library
+- not a Kotlin- or Scala-led codebase going forward
+- not a GUI desktop client
+- not a network-exposed MCP service; the MCP server is stdio-only
+
+## Required End State
+
+The target implementation should provide:
+
+1. a modern Gradle build using a current stable Gradle release
+2. a current stable Java baseline, with Java 21 preferred and Java 17 acceptable only if dependency compatibility requires it
+3. a shared API that can power both the MCP server and the terminal UI
+4. a Netty-aligned runtime model for sessions, timers, and streamed events
+5. clear separation between implementation specs and validation scenarios
+
+## Core Functional Requirements
+
+The MCP-facing system must support these workflows:
+
+- start a call
+- observe long-lived call progress without losing session context
+- listen for remote speech and return transcript events
+- wait for remote silence and complete after 3 seconds of silence
+- send text into the call flow
+- hang up cleanly
+
+The TUI must use the same shared call and event APIs rather than maintaining a separate call stack.
+
+## Current Repository State
+
+### Existing modules
+
+- `lib/`
+  - legacy SIP library module
+  - contains mixed Java and Kotlin code
+  - includes JAIN SIP setup helpers, partial SDP models, and stubbed softphone behavior
+- `sample-client/`
+  - legacy sample executable
+  - currently not a functional client or TUI
+
+### Legacy build constraints
+
+- Gradle 3.3-era conventions
+- Java 8 target
+- Kotlin 1.0.4
+- ScalaTest-era test setup
+- deprecated Gradle configurations and plugins
+- old publishing and CI assumptions
+
+## Recommended Architecture Direction
+
+The repository should remain multi-project, but responsibilities should shift toward a shared core and focused runtime layers.
+
+### Transitional module direction
+
+- `lib/`
+  - short-term migration module
+  - source of reusable legacy SIP and SDP knowledge
+  - likely reduced over time as new modules take ownership
+- `sample-client/`
+  - short-term transition harness
+  - long-term functional TUI
+
+### Planned module direction
+
+- `softphone-core`
+  - shared Java domain API
+  - call sessions, commands, events, transcript flow, text injection contracts
+- `softphone-runtime` or `softphone-sip`
+  - SIP signaling, session lifecycle runtime, timers, media integration, Netty alignment
+- `softphone-mcp`
+  - stdio MCP server implementation over the shared API
+- `sample-client/`
+  - TUI that consumes only shared APIs
+
+## Modernization Strategy
+
+Work should proceed incrementally:
+
+1. document the restart direction and workflow
+2. stabilize the build around current Gradle and Java
+3. define the shared Java API before major implementation work
+4. establish the Netty runtime and session model
+5. add the stdio MCP server on the shared API
+6. evolve `sample-client/` into the functional TUI
+7. add scenario-driven validation and operational hardening
+
+## Documentation Map
+
+- `docs/README.md`
+  - documentation entry point and folder layout
+- `docs/architecture/overview.md`
+  - what the project is and the target architecture
+- `docs/architecture/project-structure-and-namespaces.md`
+  - module layout, package rules, and namespace boundaries
+- `docs/architecture/tooling-and-build.md`
+  - Java, Gradle, testing, and tooling policy
+- `docs/specs/README.md`
+  - numbered spec workflow and ownership rules
+- `docs/scenarios/README.md`
+  - validation and scenario boundary
+- `docs/TODO.md`
+  - ordered work backlog for completing the restart
+
+## Spec Workflow
+
+This project uses numbered specs under `docs/specs/`.
+
+Each spec lives in its own folder:
+
+```text
+docs/specs/NNN-short-name/
+  spec.md
+  implementation.md
+  approval.md
+```
+
+Rules:
+
+- `spec.md` is ADR-style and describes one clear change
+- `implementation.md` turns the spec into execution steps
+- `approval.md` records who approved the spec and when
+- all agents may read specs
+- only the architect may edit specs
+
+## Risks and Constraints
+
+- legacy JAIN SIP compatibility may constrain the Java baseline
+- the current repo does not yet contain a working end-to-end call flow
+- media, transcription, and text-injection behavior will require substantial new implementation beyond the legacy library
+- MCP long-lived interaction semantics must be defined explicitly before implementation
+
+## Immediate Next Steps
+
+1. approve the initial documentation and spec workflow
+2. approve the first build modernization spec
+3. modernize the build and establish the Java baseline
+4. define the shared call-control and event model
+5. implement the runtime, MCP server, and TUI in that order
