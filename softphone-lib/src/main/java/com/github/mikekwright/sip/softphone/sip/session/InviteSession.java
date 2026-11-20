@@ -349,10 +349,10 @@ public final class InviteSession implements DialogUsage {
         dialog.confirm();
         stack.registerDialog(dialog.id(), this);
         sendAck(dialog.createAck(invite.cseq().number()));
+        state = SessionState.CONFIRMED;
         if (SDP.equals(response.contentType()) && response.hasBody()) {
             listener.onAnswer(this, response.bodyAsString());
         }
-        state = SessionState.CONFIRMED;
         listener.onEstablished(this);
         if (cancelRequested) {
             // CANCEL raced with the 2xx: the call is up, so release it with BYE (RFC 3261 §9.1, §15)
