@@ -307,7 +307,7 @@ public final class Call {
                             throw new IllegalStateException("no common codec with the offer (488 sent)");
                         }
                         applyNegotiation(result.media());
-                        sdp = result.answer().toString();
+                        sdp = withNatRtcp(result.answer()).toString();
                     }
                     session.accept(sdp);
                     return null;
@@ -472,20 +472,52 @@ public final class Call {
         MediaDirection dir = MediaNegotiation.holdDirection(localHold, remoteHold);
         List<SdpMediaConfig> configs = new ArrayList<>();
         if (audio != null) {
-            configs.add(MediaNegotiation.audioConfig(mediaHost(), audio.session().localRtpPort(),
+            configs.add(MediaNegotiation.audioConfig(mediaHost(), advertisedPort(audio.session()),
                     MediaNegotiation.audioFormats(context.config().audioCodecs(),
                             context.config().telephoneEventPayloadType()), dir));
         }
         if (video != null) {
-            configs.add(MediaNegotiation.videoConfig(mediaHost(), video.session().localRtpPort(),
+            configs.add(MediaNegotiation.videoConfig(mediaHost(), advertisedPort(video.session()),
                     MediaNegotiation.videoFormats(context.config().videoCodecs()), dir));
         }
         return configs;
     }
 
     private SessionDescription buildOffer() {
-        return negotiator.createOffer(context.config().user(), mediaHost(), sdpSessionId, sdpVersion++,
-                localConfigs());
+        return withNatRtcp(negotiator.createOffer(context.config().user(), mediaHost(), sdpSessionId, sdpVersion++,
+                localConfigs()));
+    }
+
+    /** The RTP port to advertise: the STUN discovered public port when behind NAT, else the local port. */
+    private static int advertisedPort(com.github.mikekwright.sip.softphone.rtp.RtpSession session) {
+        java.net.InetSocketAddress pub = session.publicRtpAddress();
+        return pub != null ? pub.getPort() : session.localRtpPort();
+    }
+
+    /**
+     * Behind a NAT the public RTCP port is not necessarily RTP + 1, so announce it explicitly with
+     * {@code a=rtcp:<port> IN IP4 <addr>} (RFC 3605) whenever STUN found a different mapping.
+     */
+    private SessionDescription withNatRtcp(SessionDescription sdp) {
+        for (com.github.mikekwright.sip.softphone.rtp.RtpSession s : new com.github.mikekwright.sip.softphone.rtp
+                .RtpSession[]{audio == null ? null : audio.session(), video == null ? null : video.session()}) {
+            if (s == null || s.publicRtpAddress() == null || s.publicRtcpAddress() == null) {
+                continue;
+            }
+            java.net.InetSocketAddress rtp = s.publicRtpAddress();
+            java.net.InetSocketAddress rtcp = s.publicRtcpAddress();
+            boolean standard = rtcp.getPort() == rtp.getPort() + 1 && rtcp.getAddress().equals(rtp.getAddress());
+            if (standard) {
+                continue;
+            }
+            for (MediaDescription m : sdp.media()) {
+                if (m.port() == rtp.getPort() && m.attributes("rtcp").isEmpty()) {
+                    String ip = rtcp.getAddress().getHostAddress();
+                    m.addAttribute("rtcp", rtcp.getPort() + " IN " + (ip.contains(":") ? "IP6 " : "IP4 ") + ip);
+                }
+            }
+        }
+        return sdp;
     }
 
     /** Starts or updates the RTP streams from the negotiation result and updates hold flags. */
@@ -598,7 +630,7 @@ public final class Call {
                 NegotiationResult result = negotiator.createAnswer(parsed, context.config().user(), mediaHost(),
                         sdpSessionId, sdpVersion++, localConfigs());
                 applyNegotiation(result.media());
-                return result.answer().toString();
+                return withNatRtcp(result.answer()).toString();
             } catch (RuntimeException e) {
                 log.warn("Rejecting re-INVITE offer for call {}: {}", s.callId(), e.getMessage());
                 return null;

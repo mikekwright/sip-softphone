@@ -93,6 +93,10 @@ public final class RtpSession {
 
     /** Only touched on the event loop. */
     private ScheduledFuture<?> rtcpTimer;
+    private ScheduledFuture<?> keepAliveTimer;
+    private volatile long lastRtpSendNanos = System.nanoTime();
+    private volatile InetSocketAddress publicRtp;
+    private volatile InetSocketAddress publicRtcp;
 
     private RtpSession(RtpSessionConfig config, EventLoop eventLoop, Channel rtpChannel, Channel rtcpChannel) {
         this.config = config;
@@ -319,7 +323,66 @@ public final class RtpSession {
         senderStatistics.onPacketSent(packet.payloadLength(), packet.timestamp(), System.nanoTime(),
                 clockRate(packet.payloadType()));
         rtpChannel.writeAndFlush(new DatagramPacket(buf, target)).addListener(LOG_FAILURE);
+        lastRtpSendNanos = System.nanoTime();
         return true;
+    }
+
+    // ===================================================================================== NAT support
+
+    /** The RTP channel, e.g. to run STUN from the RTP port ({@code nat.StunClient}). */
+    public Channel rtpChannel() {
+        return rtpChannel;
+    }
+
+    /** The RTCP channel. */
+    public Channel rtcpChannel() {
+        return rtcpChannel;
+    }
+
+    /**
+     * Records the public (NAT reflexive) addresses of the RTP and RTCP ports, as discovered with STUN. They are
+     * what must be advertised in SDP; the session itself keeps using its local sockets.
+     */
+    public void setPublicAddresses(InetSocketAddress rtp, InetSocketAddress rtcp) {
+        this.publicRtp = rtp;
+        this.publicRtcp = rtcp;
+    }
+
+    /** Public RTP address if known (STUN), else {@code null}. */
+    public InetSocketAddress publicRtpAddress() {
+        return publicRtp;
+    }
+
+    /** Public RTCP address if known (STUN), else {@code null}. */
+    public InetSocketAddress publicRtcpAddress() {
+        return publicRtcp;
+    }
+
+    /**
+     * Keeps the NAT binding of the RTP port open while no media is sent (hold, muted video, receive-only
+     * streams) by sending a zero-length UDP datagram whenever the port was idle for {@code interval}
+     * (RFC 6263 §4.1). RTCP reports already keep the RTCP port alive. Receivers drop such datagrams.
+     */
+    public void enableKeepAlive(java.time.Duration interval) {
+        long millis = interval.toMillis();
+        if (millis <= 0) {
+            return;
+        }
+        eventLoop.execute(() -> {
+            if (keepAliveTimer != null || closed.get()) {
+                return;
+            }
+            long check = Math.max(10, millis / 2);
+            keepAliveTimer = eventLoop.scheduleAtFixedRate(() -> {
+                InetSocketAddress target = remoteRtp;
+                if (!closed.get() && isUsable(target)
+                        && System.nanoTime() - lastRtpSendNanos >= TimeUnit.MILLISECONDS.toNanos(millis)) {
+                    rtpChannel.writeAndFlush(new DatagramPacket(rtpChannel.alloc().buffer(0), target))
+                            .addListener(LOG_FAILURE);
+                    lastRtpSendNanos = System.nanoTime();
+                }
+            }, check, check, TimeUnit.MILLISECONDS);
+        });
     }
 
     /**
@@ -429,6 +492,9 @@ public final class RtpSession {
         if (rtcpTimer != null) {
             rtcpTimer.cancel(false);
         }
+        if (keepAliveTimer != null) {
+            keepAliveTimer.cancel(false);
+        }
         ChannelFuture bye = null;
         try {
             List<RtcpPacket> compound = new ArrayList<>(buildReport());
@@ -453,8 +519,8 @@ public final class RtpSession {
     // ===================================================================================== inbound
 
     private void onDatagram(ByteBuf content, InetSocketAddress sender, boolean fromRtcpPort) {
-        if (closed.get()) {
-            return;
+        if (closed.get() || !content.isReadable()) {
+            return; // closed, or an RFC 6263 zero-length keep-alive
         }
         if (!fromRtcpPort && !RtpPacket.looksLikeRtcp(content)) {
             onRtpDatagram(content, sender);

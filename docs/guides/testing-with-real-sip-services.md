@@ -43,6 +43,7 @@ Softphone phone = Softphone.create(SoftphoneConfig.builder()
 phone.register().get(10, TimeUnit.SECONDS);
 ```
 
-Behind NAT, keep `symmetricRtp` enabled (the default). If the provider sees a private address in Contact or SDP,
-set `advertisedHost` / `mediaHost` to your public address, or use a provider with a media relay. ICE and STUN are
-not implemented yet.
+Behind a home router add `--stun <server>` (library: `.stunServer(...)`), e.g. a public STUN server or your
+provider's. The phone then advertises its public address and sends keep-alives every 25 s. Also disable "SIP ALG"
+on the router if it has one. See [NAT traversal](../protocol/nat-traversal.md) and the
+[NAT lab](../../interop/nat/README.md) for how this was verified.

@@ -139,3 +139,5 @@ The SIP layers are described in [protocol/sip-layers.md](../protocol/sip-layers.
 | `resolver` | `DefaultSipResolver` | RFC 3263 (SRV + A) |
 | `pipelineCustomizer` | none | add Netty handlers to SIP channels |
 | `symmetricRtp` | true | latch RTP to the observed source address |
+| `stunServer` | none | `host[:port]`; discover the public address behind NAT (see [NAT traversal](../protocol/nat-traversal.md)) |
+| `keepAliveInterval` | 25 s | SIP CRLF and RTP keep-alives that hold NAT bindings open; `Duration.ZERO` disables |

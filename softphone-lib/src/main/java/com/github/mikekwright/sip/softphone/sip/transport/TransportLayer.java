@@ -62,6 +62,7 @@ public final class TransportLayer {
     private volatile Handler handler = m -> {
     };
     private volatile String advertisedHost;
+    private final Map<TransportType, HostPort> publicAddresses = new java.util.concurrent.ConcurrentHashMap<>();
 
     public TransportLayer(EventLoopGroup ioGroup, EventExecutor core, Options options) {
         this.ioGroup = ioGroup;
@@ -81,8 +82,35 @@ public final class TransportLayer {
         this.advertisedHost = host;
     }
 
+    /**
+     * Sets the public (NAT reflexive) address of a transport, typically discovered with STUN. It takes precedence
+     * over the advertised host and the bound port in Via and Contact.
+     */
+    public void setPublicAddress(TransportType type, HostPort address) {
+        if (address == null) {
+            publicAddresses.remove(type);
+        } else {
+            publicAddresses.put(type, address);
+        }
+    }
+
+    /** The public address set with {@link #setPublicAddress}, or {@code null}. */
+    public HostPort publicAddress(TransportType type) {
+        return publicAddresses.get(type);
+    }
+
+    /** Sends a CRLF keep-alive to a next hop over the given transport. */
+    public CompletableFuture<Void> sendKeepAlive(TransportAddress destination) {
+        SipTransport t = transport(destination.transport());
+        return t == null ? CompletableFuture.completedFuture(null) : t.sendKeepAlive(destination.address());
+    }
+
     /** The sent-by / contact address for a transport (RFC 3261 §18.1.1). */
     public HostPort advertisedAddress(TransportType type) {
+        HostPort pub = publicAddresses.get(type);
+        if (pub != null) {
+            return pub;
+        }
         SipTransport t = transport(type);
         if (t == null) {
             throw new IllegalStateException("transport " + type + " is not enabled");
@@ -92,11 +120,7 @@ public final class TransportLayer {
         if (host == null) {
             InetAddress addr = local.getAddress();
             if (addr.isAnyLocalAddress()) {
-                try {
-                    addr = InetAddress.getLocalHost();
-                } catch (UnknownHostException e) {
-                    addr = InetAddress.getLoopbackAddress();
-                }
+                addr = primaryLocalAddress();
             }
             host = addr.getHostAddress();
         }
@@ -222,6 +246,39 @@ public final class TransportLayer {
             host = host.substring(1, host.length() - 1);
         }
         return new TransportAddress(type, new InetSocketAddress(host, port));
+    }
+
+    /**
+     * Best guess of the address other hosts reach us on when bound to a wildcard address: the first IPv4 address
+     * of an interface that is up and not loopback (site-local addresses included, as on most LANs), else
+     * {@code InetAddress.getLocalHost()} unless that is a loopback address, else loopback. Behind NAT this is still
+     * the private address; configure a STUN server to learn the public one.
+     */
+    static InetAddress primaryLocalAddress() {
+        try {
+            for (java.net.NetworkInterface nif : java.util.Collections.list(
+                    java.net.NetworkInterface.getNetworkInterfaces())) {
+                if (!nif.isUp() || nif.isLoopback() || nif.isPointToPoint() || nif.isVirtual()) {
+                    continue;
+                }
+                for (InetAddress a : java.util.Collections.list(nif.getInetAddresses())) {
+                    if (a instanceof java.net.Inet4Address && !a.isLoopbackAddress() && !a.isLinkLocalAddress()) {
+                        return a;
+                    }
+                }
+            }
+        } catch (java.net.SocketException e) {
+            log.debug("Cannot enumerate network interfaces: {}", e.getMessage());
+        }
+        try {
+            InetAddress host = InetAddress.getLocalHost();
+            if (!host.isLoopbackAddress()) {
+                return host;
+            }
+        } catch (UnknownHostException e) {
+            // fall through
+        }
+        return InetAddress.getLoopbackAddress();
     }
 
     private SipMessage intercept(SipMessage message, TransportAddress destination) {

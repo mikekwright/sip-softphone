@@ -19,6 +19,12 @@ public interface SipTransport {
     /** Sends a message to the given remote address, opening a connection first for stream transports. */
     CompletableFuture<Void> send(SipMessage message, InetSocketAddress remote);
 
+    /**
+     * Sends a CRLF keep-alive (RFC 5626 §3.5.1: a double CRLF "ping") to {@code remote}, keeping NAT bindings and
+     * connections towards that peer alive.
+     */
+    CompletableFuture<Void> sendKeepAlive(InetSocketAddress remote);
+
     /** Closes the socket and all connections. */
     CompletableFuture<Void> close();
 

@@ -68,6 +68,10 @@ and hold, rtcp-mux, telephone-event, rejection with port 0, 488 when nothing mat
 rtcp-mux, symmetric RTP), jitter buffer, G.711 μ/A-law, L16, RFC 4733 DTMF with in-band fallback, VP8 and
 H.264 packetizers/depacketizers with loss detection and key frame requests.
 
+**NAT traversal** — STUN (RFC 8489) on the SIP and RTP sockets, so the phone advertises its public address;
+SIP CRLF and RTP keep-alives (RFC 5626, RFC 6263) hold router mappings open. Verified behind a real Linux NAT
+against Asterisk ([interop/nat](interop/nat/README.md)).
+
 **Automation hooks** — futures for every milestone, `awaitState`, message interceptors (trace / assert / drop /
 rewrite), Netty pipeline customizers, tone/WAV sources, recording sinks with tone detection, shrinkable SIP
 timers, ephemeral ports for parallel tests.

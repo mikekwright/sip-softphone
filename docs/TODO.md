@@ -23,7 +23,8 @@
 - [ ] PRACK / 100rel (RFC 3262) and UPDATE (RFC 3311)
 - [ ] Session timers (RFC 4028)
 - [ ] REFER / blind and attended transfer (RFC 3515, RFC 3891)
-- [ ] SRTP with SDES or DTLS-SRTP; ICE for NAT traversal
+- [x] NAT traversal: STUN (RFC 8489) for SIP and RTP, SIP/RTP keep-alives, verified in a Linux NAT lab
+- [ ] ICE / TURN for symmetric NATs; SRTP with SDES or DTLS-SRTP
 - [ ] Opus / G.722 audio codecs via `AudioCodecRegistry`
 - [ ] NAPTR support in the resolver; SIP over WebSocket transport (RFC 7118)
 - [ ] Optional MCP or other automation front ends on top of the library (earlier specs 008-010)

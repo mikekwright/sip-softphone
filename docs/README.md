@@ -10,6 +10,7 @@
 | [protocol/call-flows.md](protocol/call-flows.md) | ladders for REGISTER, INVITE, CANCEL, BYE, re-INVITE/hold, DTMF, MESSAGE |
 | [protocol/sdp-offer-answer.md](protocol/sdp-offer-answer.md) | SDP model and RFC 3264 negotiation rules |
 | [protocol/rtp-media.md](protocol/rtp-media.md) | RTP/RTCP sessions, audio, DTMF, video packetization |
+| [protocol/nat-traversal.md](protocol/nat-traversal.md) | STUN, keep-alives, what works behind which NAT |
 | [guides/library-usage.md](guides/library-usage.md) | using the jar: calls, automation helpers, configuration |
 | [guides/extending.md](guides/extending.md) | adding methods, headers, transports, codecs, payload formats |
 | [guides/testing-with-real-sip-services.md](guides/testing-with-real-sip-services.md) | Google Voice, free SIP services, local Asterisk interop |

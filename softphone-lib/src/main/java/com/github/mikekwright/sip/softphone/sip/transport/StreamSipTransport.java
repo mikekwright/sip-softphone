@@ -173,6 +173,16 @@ public final class StreamSipTransport implements SipTransport {
     }
 
     @Override
+    public CompletableFuture<Void> sendKeepAlive(InetSocketAddress remote) {
+        Channel ch = connections.get(remote);
+        if (ch == null || !ch.isActive()) {
+            return CompletableFuture.completedFuture(null); // nothing to keep alive
+        }
+        return NettyFutures.toCompletable(ch.writeAndFlush(io.netty.buffer.Unpooled.wrappedBuffer(
+                new byte[]{'\r', '\n', '\r', '\n'})));
+    }
+
+    @Override
     public CompletableFuture<Void> close() {
         connections.values().forEach(Channel::close);
         return NettyFutures.toCompletable(serverChannel.close());

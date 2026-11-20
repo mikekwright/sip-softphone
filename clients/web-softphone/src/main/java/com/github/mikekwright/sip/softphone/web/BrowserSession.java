@@ -176,6 +176,7 @@ final class BrowserSession {
                 .bindHost(defaults.sipBind())
                 .advertisedHost(defaults.sipHost())
                 .rtpPorts(defaults.rtpMin(), defaults.rtpMax())
+                .stunServer(text(a, "stunServer", defaults.stunServer()))
                 .userAgent("web-softphone/1.0");
         if (a.path("register").asBoolean(false) && text(a, "registrar", null) == null) {
             b.registrar("sip:" + text(a, "domain", "127.0.0.1"));

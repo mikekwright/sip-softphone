@@ -31,7 +31,8 @@ plain HTTP; for other hosts start the server with `--tls-cert cert.pem --tls-key
 
 Server options: `--http-port`, `--http-bind`, `--sip-bind`, `--sip-host` (address advertised in SIP/SDP, set it to
 a LAN address to call other machines), `--rtp-ports MIN-MAX`, `--web-root DIR` (serve UI files from disk while
-developing them).
+developing them), `--stun HOST[:PORT]` (default STUN server for sessions behind NAT; each account can also set
+its own in the *STUN server* field).
 
 ## Calling between two tabs
 

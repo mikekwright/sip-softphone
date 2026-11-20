@@ -11,7 +11,7 @@ Javadoc cites the section (for example `RFC 3261 §17.1.1`) next to the code tha
 | [RFC 6026](https://www.rfc-editor.org/rfc/rfc6026) | Correct Transaction Handling for 2xx Responses to INVITE | `Accepted` state, Timers L and M in `InviteClientTransaction` / `InviteServerTransaction` |
 | [RFC 3263](https://www.rfc-editor.org/rfc/rfc3263) | Locating SIP Servers | `DefaultSipResolver` (transport selection, SRV, A/AAAA; no NAPTR) |
 | [RFC 3581](https://www.rfc-editor.org/rfc/rfc3581) | Symmetric Response Routing (`rport`) | `TransportLayer.stampReceived` / `responseDestination`, `rport` in every Via we send |
-| [RFC 5626](https://www.rfc-editor.org/rfc/rfc5626) §3.5.1 | CRLF keep-alive | `SipStreamDecoder` answers double-CRLF pings with a CRLF pong |
+| [RFC 5626](https://www.rfc-editor.org/rfc/rfc5626) §3.5.1, §4.4 | CRLF keep-alive | `SipStreamDecoder` answers double-CRLF pings; `SipStack.keepAlive` sends them to registrars and call peers |
 | [RFC 3428](https://www.rfc-editor.org/rfc/rfc3428) | SIP MESSAGE | `Softphone.sendMessage`, in-dialog MESSAGE in `InviteSession` |
 | [RFC 6086](https://www.rfc-editor.org/rfc/rfc6086) | SIP INFO | in-dialog INFO, `application/dtmf-relay` DTMF fallback |
 | [RFC 5057](https://www.rfc-editor.org/rfc/rfc5057) | Multiple dialog usages | 481/408 to a re-INVITE terminate the dialog |
@@ -49,6 +49,15 @@ Javadoc cites the section (for example `RFC 3261 §17.1.1`) next to the code tha
 | [RFC 6184](https://www.rfc-editor.org/rfc/rfc6184) | RTP payload for H.264 | `H264Packetizer`, `H264Depacketizer` (packetization-mode 1: single NAL, STAP-A, FU-A) |
 | [RFC 4961](https://www.rfc-editor.org/rfc/rfc4961) | Symmetric RTP | `RtpSession` symmetric latching |
 
+## NAT traversal
+
+| Spec | Title | Where |
+|------|-------|-------|
+| [RFC 8489](https://www.rfc-editor.org/rfc/rfc8489) | STUN (Binding, XOR-MAPPED-ADDRESS, FINGERPRINT) | `nat.StunMessage`, `StunClient`, `StunServer` |
+| [RFC 7983](https://www.rfc-editor.org/rfc/rfc7983) | Multiplexing STUN with RTP/SIP on one port | `nat.StunHandler` |
+| [RFC 6263](https://www.rfc-editor.org/rfc/rfc6263) | RTP keep-alives | `RtpSession.enableKeepAlive` |
+| [RFC 3605](https://www.rfc-editor.org/rfc/rfc3605) | `a=rtcp` for NAT mapped RTCP ports | `Call.withNatRtcp` |
+
 ## Libraries and platform
 
 * [Netty 4.2](https://netty.io/wiki/) - all sockets, codecs, timers and event loops.
@@ -59,5 +68,5 @@ Javadoc cites the section (for example `RFC 3261 §17.1.1`) next to the code tha
 
 PRACK / reliable provisional responses (RFC 3262), UPDATE (RFC 3311), session timers (RFC 4028), REFER /
 transfer (RFC 3515), SUBSCRIBE/NOTIFY (RFC 6665), SIP over WebSocket (RFC 7118), NAPTR lookups, SRTP / DTLS-SRTP
-(RFC 3711 / RFC 5764), ICE (RFC 8445), Opus and other audio codecs. See
+(RFC 3711 / RFC 5764), ICE (RFC 8445) / TURN (RFC 8656), Opus and other audio codecs. See
 [guides/extending.md](guides/extending.md) for how the library is designed to accommodate them.

@@ -25,6 +25,7 @@ const DEFAULT_ACCOUNT = {
   authUser: '',
   registrar: '',
   outboundProxy: '',
+  stunServer: '',
   transport: 'udp',
   sipPort: 0,
   register: false,
@@ -48,7 +49,7 @@ function saveJson(key, value) {
 /** Saved account with URL query overrides applied (overrides are not persisted until "Apply"). */
 function initialAccount() {
   const acc = loadJson(STORE_ACCOUNT, DEFAULT_ACCOUNT);
-  for (const k of ['displayName', 'user', 'domain', 'password', 'authUser', 'registrar', 'outboundProxy', 'transport']) {
+  for (const k of ['displayName', 'user', 'domain', 'password', 'authUser', 'registrar', 'outboundProxy', 'stunServer', 'transport']) {
     const v = qStr(k);
     if (v !== null) acc[k] = v;
   }
@@ -274,6 +275,7 @@ function readAccountForm() {
     authUser: val('authUser'),
     registrar: val('registrar'),
     outboundProxy: val('outboundProxy'),
+    stunServer: val('stunServer'),
     transport: val('transport') === 'tcp' ? 'tcp' : 'udp',
     sipPort: Math.max(0, Math.min(65535, parseInt(val('sipPort'), 10) || 0)),
     register: f.elements.namedItem('register').checked,
@@ -296,7 +298,7 @@ function sendConfigure() {
     register: !!a.register,
   };
   // Optional fields are only sent when set.
-  for (const k of ['displayName', 'password', 'authUser', 'registrar', 'outboundProxy']) if (a[k]) acc[k] = a[k];
+  for (const k of ['displayName', 'password', 'authUser', 'registrar', 'outboundProxy', 'stunServer']) if (a[k]) acc[k] = a[k];
   S.ready = null;
   renderReady();
   log('configure', { ...acc, password: acc.password ? '***' : undefined });

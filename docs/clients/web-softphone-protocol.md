@@ -29,7 +29,7 @@ Video payloads are encoded frames of the negotiated codec: `VP8` raw frames, or 
 
 | type | fields | meaning |
 |------|--------|---------|
-| `configure` | `account: {displayName, user, domain, password, authUser, registrar, outboundProxy, transport ("udp"/"tcp"), sipPort, register}` | (re)create the phone; `registrar`, `outboundProxy`, `password` optional; `sipPort` 0 = ephemeral; `register` true sends REGISTER |
+| `configure` | `account: {displayName, user, domain, password, authUser, registrar, outboundProxy, stunServer, transport ("udp"/"tcp"), sipPort, register}` | (re)create the phone; `registrar`, `outboundProxy`, `password`, `stunServer` optional; `sipPort` 0 = ephemeral; `register` true sends REGISTER |
 | `register` / `unregister` | | registration control |
 | `call` | `target` (SIP URI or `user@host:port`), `video` (bool) | place a call |
 | `answer` | `video` (bool) | answer the ringing incoming call |

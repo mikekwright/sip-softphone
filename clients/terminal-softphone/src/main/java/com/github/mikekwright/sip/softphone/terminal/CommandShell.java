@@ -242,7 +242,8 @@ final class CommandShell implements AutoCloseable {
     }
 
     private boolean status() {
-        print("Local URI: " + phone.localUri() + "   AOR: " + phone.aor());
+        print("Local URI: " + phone.localUri() + "   AOR: " + phone.aor()
+                + (phone.stack().publicHost() != null ? "   public IP (STUN): " + phone.stack().publicHost() : ""));
         print("Registration: " + phone.registrationState());
         return calls();
     }

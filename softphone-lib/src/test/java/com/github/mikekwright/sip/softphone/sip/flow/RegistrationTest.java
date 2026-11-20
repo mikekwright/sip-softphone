@@ -84,10 +84,15 @@ class RegistrationTest {
         assertThat(reg.grantedExpires()).isEqualTo(60);
         assertThat(bindings).containsKey("sip:alice@example.com");
         assertThat(bindings.get("sip:alice@example.com")).startsWith("sip:alice@127.0.0.1:");
+        // RFC 5626 keep-alives towards the registrar while registered
+        Thread.sleep(100);
+        assertThat(ua.keepAliveTargets()).hasSize(1);
 
         assertThat(reg.unregister().get(5, TimeUnit.SECONDS).statusCode()).isEqualTo(200);
         assertThat(reg.state()).isEqualTo(RegistrationState.UNREGISTERED);
         assertThat(bindings).isEmpty();
+        Thread.sleep(100);
+        assertThat(ua.keepAliveTargets()).isEmpty();
         assertThat(states).contains(RegistrationState.REGISTERING, RegistrationState.REGISTERED,
                 RegistrationState.UNREGISTERED);
     }

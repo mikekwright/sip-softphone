@@ -53,6 +53,8 @@ public final class Registration {
     private int grantedExpires;
     private ScheduledFuture<?> refresh;
     private SipUri contactUri;
+    private SipRequest lastRequest;
+    private Runnable keepAlive;
 
     /**
      * @param stack            the SIP stack
@@ -109,6 +111,7 @@ public final class Registration {
                 String.valueOf(expires)));
         request.addHeader(HeaderNames.EXPIRES, expires);
         request.setRawBody(new byte[0]);
+        lastRequest = request;
         return NonInviteRequestFlow.send(stack, request, () -> ++cseq, r -> {
         }).thenApplyAsync(response -> {
             handleResponse(response, expires);
@@ -129,11 +132,13 @@ public final class Registration {
     private void handleResponse(SipResponse response, int requested) {
         if (!response.isSuccess()) {
             if (response.statusCode() != SipStatus.INTERVAL_TOO_BRIEF) {
+                stopKeepAlive();
                 setState(RegistrationState.FAILED, response);
             }
             return;
         }
         if (requested == 0) {
+            stopKeepAlive();
             grantedExpires = 0;
             setState(RegistrationState.UNREGISTERED, response);
             return;
@@ -141,6 +146,29 @@ public final class Registration {
         grantedExpires = grantedExpires(response, requested);
         setState(RegistrationState.REGISTERED, response);
         scheduleRefresh(grantedExpires);
+        startKeepAlive();
+    }
+
+    /**
+     * Keeps the NAT binding / connection towards the registrar open between refreshes (RFC 5626 §4.4), so that
+     * incoming requests routed by the registrar can reach us.
+     */
+    private void startKeepAlive() {
+        if (keepAlive != null || lastRequest == null) {
+            return;
+        }
+        stack.resolveNextHop(lastRequest).thenAcceptAsync(dest -> {
+            if (keepAlive == null && state == RegistrationState.REGISTERED) {
+                keepAlive = stack.keepAlive(dest);
+            }
+        }, stack.core());
+    }
+
+    private void stopKeepAlive() {
+        if (keepAlive != null) {
+            keepAlive.run();
+            keepAlive = null;
+        }
     }
 
     /** §10.2.4: the expiry of our binding is given by its Contact expires param, else the Expires header. */

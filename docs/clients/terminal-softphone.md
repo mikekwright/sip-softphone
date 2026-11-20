@@ -76,5 +76,6 @@ audio tool (the library's `ToneDetector` does the same inside Java tests).
 ## Options
 
 Run `terminal-softphone --help` for the full list: identity (`--user --domain --password --auth-user
---registrar --register --proxy`), network (`--transport --port --bind --host --rtp-ports --codecs`), media
+--registrar --register --proxy`), network (`--transport --port --bind --host --rtp-ports --codecs --stun
+--keepalive`), media
 (`--audio --record`) and automation (`--auto-answer --trace --exec --script --batch`).

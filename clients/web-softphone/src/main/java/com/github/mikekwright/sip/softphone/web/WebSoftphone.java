@@ -150,6 +150,7 @@ public final class WebSoftphone implements AutoCloseable {
         Path webRoot = null;
         Path cert = null;
         Path key = null;
+        String stun = null;
         for (int i = 0; i < args.length; i++) {
             String a = args[i];
             switch (a) {
@@ -165,6 +166,7 @@ public final class WebSoftphone implements AutoCloseable {
                 case "--web-root" -> webRoot = Path.of(args[++i]).toAbsolutePath().normalize();
                 case "--tls-cert" -> cert = Path.of(args[++i]);
                 case "--tls-key" -> key = Path.of(args[++i]);
+                case "--stun" -> stun = args[++i];
                 case "-h", "--help" -> {
                     System.out.println("""
                             Usage: web-softphone [options]
@@ -176,12 +178,14 @@ public final class WebSoftphone implements AutoCloseable {
                               --web-root DIR        serve the UI from a directory (development)
                               --tls-cert PEM        enable HTTPS with this certificate chain
                               --tls-key PEM         private key for --tls-cert
+                              --stun HOST[:PORT]    default STUN server for NAT traversal (per-account override)
                             Open the page, configure the account and call another tab or any SIP device.""");
                     System.exit(0);
                 }
                 default -> throw new IllegalArgumentException("unknown option " + a.toLowerCase(Locale.ROOT));
             }
         }
-        return new WebSoftphoneOptions(httpBind, httpPort, sipBind, sipHost, rtpMin, rtpMax, webRoot, cert, key);
+        return new WebSoftphoneOptions(httpBind, httpPort, sipBind, sipHost, rtpMin, rtpMax, webRoot, cert, key,
+                stun);
     }
 }

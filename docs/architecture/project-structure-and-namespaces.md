@@ -17,6 +17,7 @@ sip-softphone/
 │       │   ├── core/      SipStack (UA core), MessageFactory, handler / dialog-usage SPI
 │       │   ├── flow/      NonInviteRequestFlow, Registration
 │       │   └── session/   InviteSession
+│       ├── nat/           STUN client/server, RFC 7983 demultiplexing
 │       ├── sdp/           model, parser, writer, SdpNegotiator
 │       ├── rtp/           RtpPacket, RTCP packets, RtpSession, statistics, PortAllocator
 │       └── media/         AudioStream, VideoStream, JitterBuffer, MediaStreamSpec

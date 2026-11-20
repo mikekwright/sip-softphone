@@ -73,6 +73,9 @@ public final class SipStack implements TransactionUser, AutoCloseable {
     private final Map<SipMethod, RequestHandler> handlers = new ConcurrentHashMap<>();
     private final Map<DialogId, DialogUsage> dialogs = new HashMap<>();
     private final List<String> supportedOptionTags = List.of();
+    private final Map<TransportAddress, Integer> keepAliveTargets = new java.util.concurrent.ConcurrentHashMap<>();
+    private io.netty.util.concurrent.ScheduledFuture<?> keepAliveTask;
+    private volatile String publicHost;
 
     public SipStack(SipStackConfig config) {
         this(config, null);
@@ -98,10 +101,94 @@ public final class SipStack implements TransactionUser, AutoCloseable {
         registerHandler(SipMethod.OPTIONS, this::answerOptions);
     }
 
-    /** Binds all configured transports. */
+    /**
+     * Binds all configured transports and, when a STUN server is configured, discovers the public address so that
+     * Via and Contact work through NAT. A failed STUN lookup is logged and does not fail the start.
+     */
     public CompletableFuture<Void> start() {
         transport.setAdvertisedHost(config.advertisedHost());
-        return transport.start(config.listenPoints());
+        CompletableFuture<Void> started = transport.start(config.listenPoints());
+        if (config.stunServer() == null) {
+            return started;
+        }
+        return started.thenCompose(v -> discoverPublicAddress()).exceptionally(err -> {
+            log.warn("STUN discovery via {} failed, advertising local addresses: {}", config.stunServer(),
+                    err.getMessage());
+            return null;
+        });
+    }
+
+    /**
+     * STUN on the SIP UDP socket gives the public host and port for UDP; stream transports advertise the public
+     * host with their local port (inbound connections are not possible through NAT anyway, outbound connections
+     * are reused for requests towards us).
+     */
+    private CompletableFuture<Void> discoverPublicAddress() {
+        com.github.mikekwright.sip.softphone.sip.transport.SipTransport udp = transport.transport(TransportType.UDP);
+        CompletableFuture<java.net.InetSocketAddress> mapped;
+        io.netty.channel.Channel temporary = null;
+        if (udp instanceof com.github.mikekwright.sip.softphone.sip.transport.UdpSipTransport u) {
+            mapped = com.github.mikekwright.sip.softphone.nat.StunClient.discover(u.channel(), config.stunServer());
+        } else {
+            temporary = new io.netty.bootstrap.Bootstrap().group(ioGroup)
+                    .channel(io.netty.channel.socket.nio.NioDatagramChannel.class)
+                    .handler(new io.netty.channel.ChannelInboundHandlerAdapter())
+                    .bind(0).syncUninterruptibly().channel();
+            mapped = com.github.mikekwright.sip.softphone.nat.StunClient.discover(temporary, config.stunServer());
+        }
+        io.netty.channel.Channel toClose = temporary;
+        return mapped.whenComplete((a, e) -> {
+            if (toClose != null) {
+                toClose.close();
+            }
+        }).thenAccept(addr -> {
+            String host = addr.getAddress().getHostAddress();
+            publicHost = host;
+            for (TransportType t : transport.transportTypes()) {
+                int port = t == TransportType.UDP && toClose == null ? addr.getPort()
+                        : transport.transport(t).localAddress().getPort();
+                transport.setPublicAddress(t, new com.github.mikekwright.sip.softphone.sip.transport.HostPort(
+                        host, port));
+            }
+            log.info("STUN: public SIP address is {}:{}", host, addr.getPort());
+        });
+    }
+
+    /** The public IP discovered with STUN, or {@code null}. */
+    public String publicHost() {
+        return publicHost;
+    }
+
+    /**
+     * Starts sending periodic CRLF keep-alives to a next hop (RFC 5626 §4.4) until the returned handle is run.
+     * Several users of the same destination share one keep-alive. No-op when keep-alives are disabled.
+     */
+    public Runnable keepAlive(TransportAddress destination) {
+        long interval = config.keepAliveInterval().toMillis();
+        if (interval <= 0 || destination == null) {
+            return () -> {
+            };
+        }
+        execute(() -> {
+            keepAliveTargets.merge(destination, 1, Integer::sum);
+            if (keepAliveTask == null) {
+                keepAliveTask = core.scheduleAtFixedRate(() -> keepAliveTargets.keySet()
+                        .forEach(transport::sendKeepAlive), interval, interval, TimeUnit.MILLISECONDS);
+            }
+        });
+        boolean[] done = {false};
+        return () -> execute(() -> {
+            if (done[0]) {
+                return;
+            }
+            done[0] = true;
+            keepAliveTargets.computeIfPresent(destination, (d, n) -> n <= 1 ? null : n - 1);
+        });
+    }
+
+    /** Destinations currently kept alive (for diagnostics and tests). */
+    public java.util.Set<TransportAddress> keepAliveTargets() {
+        return java.util.Set.copyOf(keepAliveTargets.keySet());
     }
 
     /** Closes transports and stops the executors (the I/O group only if owned by this stack). */

@@ -85,7 +85,9 @@ public final class Softphone implements AutoCloseable, CallContext {
                 .resolver(config.resolver())
                 .pipelineCustomizer(config.pipelineCustomizer())
                 .tls(config.serverSsl(), config.clientSsl())
-                .ioThreads(config.ioThreads());
+                .ioThreads(config.ioThreads())
+                .stunServer(config.stunServer())
+                .keepAliveInterval(config.keepAliveInterval());
         if (config.password() != null) {
             sb.credentials(CredentialsProvider.of(new Credentials(config.authUser(), config.password())));
         }
@@ -109,6 +111,7 @@ public final class Softphone implements AutoCloseable, CallContext {
     public CompletableFuture<Softphone> start() {
         return stack.start().thenApply(v -> {
             String host = config.mediaHost() != null ? config.mediaHost()
+                    : stack.publicHost() != null ? stack.publicHost()
                     : stack.transport().advertisedAddress(config.transport()).host();
             mediaHost = host;
             log.info("Softphone {} ready at {}", config.user(), localUri());
@@ -310,7 +313,26 @@ public final class Softphone implements AutoCloseable, CallContext {
                 .cname(config.user() + "@" + mediaHost())
                 .symmetricLatching(config.symmetricRtp())
                 .build();
-        return RtpSession.bind(stack.ioGroup(), bind, ports, rtpConfig);
+        return RtpSession.bind(stack.ioGroup(), bind, ports, rtpConfig).thenCompose(session -> {
+            session.enableKeepAlive(config.keepAliveInterval());
+            if (config.stunServer() == null) {
+                return CompletableFuture.completedFuture(session);
+            }
+            // Learn the NAT mappings of both ports so that SDP advertises reachable addresses (RFC 8489)
+            CompletableFuture<java.net.InetSocketAddress> rtp =
+                    com.github.mikekwright.sip.softphone.nat.StunClient.discover(session.rtpChannel(), config.stunServer());
+            CompletableFuture<java.net.InetSocketAddress> rtcp =
+                    com.github.mikekwright.sip.softphone.nat.StunClient.discover(session.rtcpChannel(), config.stunServer());
+            return rtp.thenCombine(rtcp, (a, b) -> {
+                session.setPublicAddresses(a, b);
+                log.debug("STUN: RTP {} -> {}, RTCP -> {}", session.localRtpPort(), a, b);
+                return session;
+            }).exceptionally(err -> {
+                log.warn("STUN discovery for RTP port {} failed, advertising the local port: {}",
+                        session.localRtpPort(), err.getMessage());
+                return session;
+            });
+        });
     }
 
     @Override

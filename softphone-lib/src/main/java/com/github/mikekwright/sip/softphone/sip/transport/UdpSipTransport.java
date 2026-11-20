@@ -24,6 +24,8 @@ import java.util.concurrent.CompletableFuture;
  */
 public final class UdpSipTransport implements SipTransport {
 
+    private static final byte[] KEEP_ALIVE = {'\r', '\n', '\r', '\n'};
+
     private final Channel channel;
 
     private UdpSipTransport(Channel channel) {
@@ -72,6 +74,17 @@ public final class UdpSipTransport implements SipTransport {
     public CompletableFuture<Void> send(SipMessage message, InetSocketAddress remote) {
         AddressedEnvelope<SipMessage, InetSocketAddress> env = new DefaultAddressedEnvelope<>(message, remote);
         return NettyFutures.toCompletable(channel.writeAndFlush(env));
+    }
+
+    @Override
+    public CompletableFuture<Void> sendKeepAlive(InetSocketAddress remote) {
+        return NettyFutures.toCompletable(channel.writeAndFlush(new io.netty.channel.socket.DatagramPacket(
+                io.netty.buffer.Unpooled.wrappedBuffer(KEEP_ALIVE), remote)));
+    }
+
+    /** The datagram channel, e.g. to run STUN on the SIP socket. */
+    public Channel channel() {
+        return channel;
     }
 
     @Override

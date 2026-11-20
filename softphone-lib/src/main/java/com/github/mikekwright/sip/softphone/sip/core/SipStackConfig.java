@@ -32,6 +32,8 @@ public final class SipStackConfig {
     private final SslContext clientSsl;
     private final int ioThreads;
     private final int idleConnectionSeconds;
+    private final String stunServer;
+    private final java.time.Duration keepAliveInterval;
 
     private SipStackConfig(Builder b) {
         this.listenPoints = List.copyOf(b.listenPoints.isEmpty()
@@ -48,6 +50,8 @@ public final class SipStackConfig {
         this.clientSsl = b.clientSsl;
         this.ioThreads = b.ioThreads;
         this.idleConnectionSeconds = b.idleConnectionSeconds;
+        this.stunServer = b.stunServer;
+        this.keepAliveInterval = b.keepAliveInterval;
     }
 
     public static Builder builder() {
@@ -109,6 +113,16 @@ public final class SipStackConfig {
         return idleConnectionSeconds;
     }
 
+    /** STUN server ({@code host[:port]}) used to discover the public address behind a NAT, or {@code null}. */
+    public String stunServer() {
+        return stunServer;
+    }
+
+    /** Interval of CRLF keep-alives towards registrars and call peers; zero disables them. */
+    public java.time.Duration keepAliveInterval() {
+        return keepAliveInterval;
+    }
+
     public static final class Builder {
         private final List<ListenPoint> listenPoints = new ArrayList<>();
         private TransportType defaultTransport;
@@ -123,6 +137,8 @@ public final class SipStackConfig {
         private SslContext clientSsl;
         private int ioThreads = 0;
         private int idleConnectionSeconds = 300;
+        private String stunServer;
+        private java.time.Duration keepAliveInterval = java.time.Duration.ofSeconds(25);
 
         /** Adds a listen point; the first one also defines the default transport unless set explicitly. */
         public Builder listen(TransportType transport, String host, int port) {
@@ -185,6 +201,18 @@ public final class SipStackConfig {
 
         public Builder idleConnectionSeconds(int seconds) {
             this.idleConnectionSeconds = seconds;
+            return this;
+        }
+
+        /** Enables STUN based public address discovery ({@code host[:port]}, default port 3478). */
+        public Builder stunServer(String server) {
+            this.stunServer = server == null || server.isBlank() ? null : server.trim();
+            return this;
+        }
+
+        /** Keep-alive interval for NAT bindings / connections (RFC 5626 §4.4); {@code Duration.ZERO} disables. */
+        public Builder keepAliveInterval(java.time.Duration interval) {
+            this.keepAliveInterval = Objects.requireNonNull(interval);
             return this;
         }
 

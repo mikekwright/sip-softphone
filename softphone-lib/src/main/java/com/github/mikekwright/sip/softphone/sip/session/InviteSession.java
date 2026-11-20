@@ -107,6 +107,7 @@ public final class InviteSession implements DialogUsage {
 
     // re-INVITE we sent
     private boolean reinvitePending;
+    private Runnable keepAlive;
 
     /** A 2xx we keep retransmitting until its ACK arrives (RFC 3261 §13.3.1.4). */
     private final class PendingAck {
@@ -350,6 +351,7 @@ public final class InviteSession implements DialogUsage {
         stack.registerDialog(dialog.id(), this);
         sendAck(dialog.createAck(invite.cseq().number()));
         state = SessionState.CONFIRMED;
+        startKeepAlive(inviteDestination);
         if (SDP.equals(response.contentType()) && response.hasBody()) {
             listener.onAnswer(this, response.bodyAsString());
         }
@@ -533,6 +535,7 @@ public final class InviteSession implements DialogUsage {
         if (state == SessionState.CONNECTING) {
             dialog.confirm();
             state = SessionState.CONFIRMED;
+            startKeepAlive(serverTx.origin().source());
             listener.onEstablished(this);
             if (byeAfterAck) {
                 bye();
@@ -787,11 +790,22 @@ public final class InviteSession implements DialogUsage {
                 contactTransport == null ? stack.config().defaultTransport() : contactTransport)).toString();
     }
 
+    /** Keeps the signalling path to the peer (or its proxy) open through NATs for the duration of the call. */
+    private void startKeepAlive(TransportAddress destination) {
+        if (keepAlive == null && destination != null) {
+            keepAlive = stack.keepAlive(destination);
+        }
+    }
+
     private void terminate(Cause cause, int status, String reason) {
         if (state == SessionState.TERMINATED) {
             return;
         }
         state = SessionState.TERMINATED;
+        if (keepAlive != null) {
+            keepAlive.run();
+            keepAlive = null;
+        }
         if (pendingAck != null) {
             pendingAck.cancel();
             pendingAck = null;

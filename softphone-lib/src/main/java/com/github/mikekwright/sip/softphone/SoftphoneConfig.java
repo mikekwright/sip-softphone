@@ -52,6 +52,8 @@ public final class SoftphoneConfig {
     private final SslContext clientSsl;
     private final int ioThreads;
     private final boolean symmetricRtp;
+    private final String stunServer;
+    private final java.time.Duration keepAliveInterval;
 
     private SoftphoneConfig(Builder b) {
         this.user = b.user;
@@ -80,6 +82,8 @@ public final class SoftphoneConfig {
         this.clientSsl = b.clientSsl;
         this.ioThreads = b.ioThreads;
         this.symmetricRtp = b.symmetricRtp;
+        this.stunServer = b.stunServer;
+        this.keepAliveInterval = b.keepAliveInterval;
     }
 
     public static Builder builder() {
@@ -114,6 +118,8 @@ public final class SoftphoneConfig {
         b.clientSsl = clientSsl;
         b.ioThreads = ioThreads;
         b.symmetricRtp = symmetricRtp;
+        b.stunServer = stunServer;
+        b.keepAliveInterval = keepAliveInterval;
         return b;
     }
 
@@ -231,6 +237,19 @@ public final class SoftphoneConfig {
         return symmetricRtp;
     }
 
+    /**
+     * STUN server ({@code host[:port]}) used to learn the public address of the SIP and RTP sockets when the
+     * softphone runs behind a NAT, or {@code null} to advertise local addresses.
+     */
+    public String stunServer() {
+        return stunServer;
+    }
+
+    /** Interval of SIP CRLF and RTP keep-alives that hold NAT bindings open; zero disables them. */
+    public java.time.Duration keepAliveInterval() {
+        return keepAliveInterval;
+    }
+
     public static final class Builder {
         private String user = "softphone";
         private String domain = "localhost";
@@ -258,6 +277,8 @@ public final class SoftphoneConfig {
         private SslContext clientSsl;
         private int ioThreads;
         private boolean symmetricRtp = true;
+        private String stunServer;
+        private java.time.Duration keepAliveInterval = java.time.Duration.ofSeconds(25);
 
         public Builder user(String user) {
             this.user = Objects.requireNonNull(user);
@@ -392,6 +413,18 @@ public final class SoftphoneConfig {
 
         public Builder symmetricRtp(boolean enabled) {
             this.symmetricRtp = enabled;
+            return this;
+        }
+
+        /** Enables NAT discovery with a STUN server, e.g. {@code stun.example.org:3478}. */
+        public Builder stunServer(String server) {
+            this.stunServer = server == null || server.isBlank() ? null : server.trim();
+            return this;
+        }
+
+        /** Keep-alive interval for NAT bindings (default 25 s); {@code Duration.ZERO} disables keep-alives. */
+        public Builder keepAliveInterval(java.time.Duration interval) {
+            this.keepAliveInterval = Objects.requireNonNull(interval);
             return this;
         }
 

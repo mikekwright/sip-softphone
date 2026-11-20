@@ -170,6 +170,9 @@ public final class TerminalSoftphone {
                     String[] range = (value != null ? value : args[++i]).split("-");
                     b.rtpPorts(Integer.parseInt(range[0]), Integer.parseInt(range[1]));
                 }
+                case "--stun" -> b.stunServer(value != null ? value : args[++i]);
+                case "--keepalive" -> b.keepAliveInterval(java.time.Duration.ofSeconds(
+                        Long.parseLong(value != null ? value : args[++i])));
                 case "--codecs" -> b.audioCodecs(Arrays.asList((value != null ? value : args[++i]).split(",")));
                 case "--register" -> register = true;
                 case "--auto-answer" -> autoAnswer = value != null ? value : "0";
@@ -221,6 +224,8 @@ public final class TerminalSoftphone {
                   --host ADDR              address advertised in Via/Contact/SDP
                   --rtp-ports MIN-MAX      RTP port range (default 20000-29998)
                   --codecs PCMU,PCMA       audio codecs in preference order
+                  --stun HOST[:PORT]       discover the public address behind a NAT with STUN (RFC 8489)
+                  --keepalive SECONDS      NAT keep-alive interval for SIP and RTP (default 25, 0 = off)
 
                 Media
                   --audio SPEC             audio source: device | silence | tone[:HZ] | file:PATH | echo
