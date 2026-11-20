@@ -1,18 +1,21 @@
 *.class
-.gradle
+.gradle/
 build/
+out/
+.kotlin/
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
+# Package files (keep the Gradle wrapper)
 *.jar
+!gradle/wrapper/gradle-wrapper.jar
 *.war
 *.ear
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
 target
 .idea
 *.iml
+.vscode/
+*.wav
+!**/src/test/resources/**/*.wav
+node_modules/
