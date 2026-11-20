@@ -1,0 +1,14 @@
+<configuration>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{30} - %msg%n</pattern>
+    </encoder>
+  </appender>
+  <logger name="com.github.mikekwright.sip.softphone" level="INFO"/>
+  <!-- set to DEBUG to log every SIP message on the wire -->
+  <logger name="com.github.mikekwright.sip.softphone.wire" level="INFO"/>
+  <logger name="io.netty" level="WARN"/>
+  <root level="WARN">
+    <appender-ref ref="STDOUT"/>
+  </root>
+</configuration>

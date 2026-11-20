@@ -179,11 +179,19 @@ public abstract sealed class SipMessage permits SipRequest, SipResponse {
     public byte[] encode() {
         StringBuilder sb = new StringBuilder(512);
         sb.append(startLine()).append("\r\n");
+        String previous = null;
         for (SipHeaders.Header h : headers) {
             if (h.name().equalsIgnoreCase(HeaderNames.CONTENT_LENGTH)) {
                 continue;
             }
-            sb.append(h.name()).append(": ").append(h.value()).append("\r\n");
+            if (h.name().equals(previous) && HeaderNames.isCombinable(h.name())) {
+                // RFC 3261 §7.3.1: consecutive values of a list header may share one line
+                sb.setLength(sb.length() - 2);
+                sb.append(", ").append(h.value()).append("\r\n");
+            } else {
+                sb.append(h.name()).append(": ").append(h.value()).append("\r\n");
+            }
+            previous = h.name();
         }
         sb.append(HeaderNames.CONTENT_LENGTH).append(": ").append(body.length).append("\r\n\r\n");
         byte[] head = sb.toString().getBytes(StandardCharsets.UTF_8);

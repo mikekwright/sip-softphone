@@ -110,6 +110,16 @@ public final class HeaderNames {
         return known != null ? known : trimmed;
     }
 
+    /**
+     * True for list headers that are written comma separated on one line when serializing (e.g. Allow, Supported).
+     * Via, Route, Record-Route, Contact, Path and Service-Route stay one value per line for readability.
+     */
+    public static boolean isCombinable(String name) {
+        String c = canonical(name).toLowerCase(Locale.ROOT);
+        return LIST_HEADERS.contains(c) && !Set.of("via", "route", "record-route", "contact", "path",
+                "service-route", "p-asserted-identity").contains(c);
+    }
+
     /** True if the header's grammar is a comma separated list that may be split into separate values. */
     public static boolean isListHeader(String name) {
         return LIST_HEADERS.contains(canonical(name).toLowerCase(Locale.ROOT));
