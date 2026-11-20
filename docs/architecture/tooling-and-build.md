@@ -1,48 +1,37 @@
-# Tooling and Build
+# Tooling and build
 
-## Language Policy
+| Item | Choice |
+|------|--------|
+| Language | Java 21 (toolchain; `--release 21`) |
+| Build | Gradle 9 wrapper, Kotlin DSL, version catalog `gradle/libs.versions.toml` |
+| Networking | Netty 4.2 (NIO transport) |
+| Logging | SLF4J API in the library; Logback in clients and tests |
+| Tests | JUnit 6 (Jupiter) + AssertJ; Playwright/Chromium for the web E2E script |
+| Terminal UI | JLine 3 |
+| JSON (web client) | Jackson |
+| CI | GitHub Actions `.github/workflows/build.yml` runs `./gradlew build` when a release is published (or manually) |
+| Interop | local Asterisk harness in `interop/asterisk` |
 
-- primary implementation language: Java
-- preferred baseline: Java 21 LTS
-- acceptable fallback: Java 17 LTS if dependency compatibility requires it during migration
-- Kotlin and Scala should not be expanded for new project work unless a spec explicitly approves an exception
+## Common commands
 
-## Build Policy
+```bash
+./gradlew build                                   # compile, test, javadoc, jars for all modules
+./gradlew :softphone-lib:test                     # library tests (~190 tests, ~15 s)
+./gradlew :softphone-lib:publishToMavenLocal      # install the jar (+ sources, javadoc) locally
+./gradlew :softphone-lib:publishMavenPublicationToStagingRepository   # staged release in build/staging-repo
+./gradlew :clients:terminal-softphone:installDist # terminal client launcher in build/install
+./gradlew :clients:web-softphone:run              # web client on http://localhost:8080
+```
 
-- use the Gradle wrapper
-- upgrade from the legacy Gradle 3.3-era setup to a current stable Gradle release
-- use Java toolchains
-- prefer `java-library` and `application` plugins over legacy patterns
-- replace deprecated configurations such as `compile` and `testCompile`
+## Publishing
 
-## Testing Policy
+`softphone-lib` applies `maven-publish` and `signing`, produces sources and javadoc jars and a complete POM
+(license, SCM, developer). Signing is enabled when `-PsigningKey` / `-PsigningPassword` are provided. Upload the
+staged repository (or add a repository with credentials) to publish to Maven Central.
 
-- use JUnit 5 for new automated tests
-- keep validation runnable from the Gradle wrapper
-- separate implementation specs from validation scenarios
-- add scenario-oriented coverage under `docs/scenarios/`
+## Testing conventions
 
-## Runtime Policy
-
-- use Netty as the runtime focus for sessions, timers, and event-oriented flow
-- keep asynchronous behavior aligned behind clear runtime boundaries
-- do not let MCP or TUI front ends own call lifecycle logic directly
-
-## Legacy Migration Policy
-
-- treat `lib/` as a migration source, not the final architecture
-- treat `sample-client/` as a transition harness and TUI landing zone
-- remove or retire old publishing, CI, and plugin assumptions when no longer needed
-
-## Tooling Expectations
-
-- Gradle wrapper for build and test commands
-- modern dependency management
-- structured logging suitable for long-lived call sessions
-- documentation-first workflow through `docs/specs/` and `docs/scenarios/`
-
-## Out of Scope for Initial Restart
-
-- GUI application work
-- public network-exposed MCP transport
-- broad library publishing concerns
+* Network tests bind to `127.0.0.1` with port 0 so they can run in parallel and in CI.
+* Timeout paths use `TimerSettings` with T1 = 10 ms.
+* Media assertions use `RecordingSink` + `ToneDetector` rather than sleeps on wall time.
+* Fault injection uses `SipMessageInterceptor` (drop / rewrite messages).

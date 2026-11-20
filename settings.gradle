@@ -1,4 +1,0 @@
-rootProject.name = 'softphone'
-include 'lib'
-include 'sample-client'
-

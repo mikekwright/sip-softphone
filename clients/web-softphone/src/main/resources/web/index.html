@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>SIP Softphone</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Icon sprite -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-phone" viewBox="0 0 24 24"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></symbol>
+    <symbol id="i-hangup" viewBox="0 0 24 24"><path fill="currentColor" d="M12 9c-1.6 0-3.15.25-4.6.72v3.1a1 1 0 0 1-.56.9c-.98.49-1.87 1.12-2.66 1.85a1 1 0 0 1-1.41-.02L.29 13.08a1 1 0 0 1 0-1.41C3.34 8.77 7.46 7 12 7s8.66 1.77 11.71 4.67a1 1 0 0 1 0 1.41l-2.48 2.48a1 1 0 0 1-1.41.02 11.3 11.3 0 0 0-2.67-1.85 1 1 0 0 1-.56-.9v-3.1A15 15 0 0 0 12 9z"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><path fill="currentColor" d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11z"/></symbol>
+    <symbol id="i-video-off" viewBox="0 0 24 24"><path fill="currentColor" d="M21 6.5l-4 4V7a1 1 0 0 0-1-1H9.82L21 17.18zM3.27 2L2 3.27 4.73 6H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12c.2 0 .39-.08.54-.18L19.73 21 21 19.73z"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11z"/></symbol>
+    <symbol id="i-mic-off" viewBox="0 0 24 24"><path fill="currentColor" d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23A6.9 6.9 0 0 0 19 11zm-4.02.17L9 5.18V5a3 3 0 0 1 6 0v6zM4.27 3L3 4.27l6 6V11a3 3 0 0 0 3 3c.22 0 .44-.03.65-.08l1.66 1.66A5.3 5.3 0 0 1 6.7 11H5a7 7 0 0 0 6 6.92V21h2v-3.08a6.9 6.9 0 0 0 2.54-.9L19.73 21 21 19.73z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path fill="currentColor" d="M6 19h4V5H6zm8-14v14h4V5z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><path fill="currentColor" d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11z"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><path fill="currentColor" d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6a.5.5 0 0 0 .12-.64l-2-3.46a.5.5 0 0 0-.6-.22l-2.5 1a7.3 7.3 0 0 0-1.7-1l-.38-2.65A.5.5 0 0 0 14 2h-4a.5.5 0 0 0-.5.42l-.37 2.65a7.7 7.7 0 0 0-1.7 1l-2.5-1a.5.5 0 0 0-.6.22l-2 3.46a.5.5 0 0 0 .12.64L4.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.65a.5.5 0 0 0-.12.64l2 3.46c.12.22.38.3.6.22l2.5-1c.52.4 1.09.73 1.7 1l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65a7.3 7.3 0 0 0 1.7-1l2.5 1c.22.08.48 0 .6-.22l2-3.46a.5.5 0 0 0-.12-.64zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></symbol>
+  </svg>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo"><svg><use href="#i-phone"/></svg></span>
+      <span class="brand-name">SIP Softphone</span>
+    </div>
+    <div class="identity" title="Your SIP address (from the server's ready message)">
+      <span class="identity-label">Your address</span>
+      <code id="localUri" class="identity-uri">not connected</code>
+      <button id="copyUri" class="icon-btn" type="button" title="Copy address" aria-label="Copy address" disabled>
+        <svg><use href="#i-copy"/></svg>
+      </button>
+    </div>
+    <div class="pills">
+      <span id="fakeBadge" class="pill pill-warn" hidden>TEST PATTERN</span>
+      <span id="regPill" class="pill" title="Registration">Not registered</span>
+      <span id="wsPill" class="pill" title="Server connection">Connecting…</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Left column: account + dialer -->
+    <aside class="col col-left">
+      <details id="accountPanel" class="card account">
+        <summary>
+          <svg class="summary-icon"><use href="#i-gear"/></svg>
+          <span class="summary-title">Account</span>
+          <span id="accountSummary" class="summary-sub"></span>
+        </summary>
+        <form id="accountForm" class="form" autocomplete="off">
+          <label>Display name<input name="displayName" placeholder="Alice"></label>
+          <div class="grid2">
+            <label>User<input name="user" required placeholder="alice"></label>
+            <label>Domain<input name="domain" required placeholder="127.0.0.1"></label>
+          </div>
+          <label>Password<input name="password" type="password" placeholder="(optional)"></label>
+          <label>Auth user<input name="authUser" placeholder="(optional, defaults to user)"></label>
+          <label>Registrar<input name="registrar" placeholder="(optional) sip:registrar.example.com"></label>
+          <label>Outbound proxy<input name="outboundProxy" placeholder="(optional) sip:proxy.example.com"></label>
+          <label>STUN server<input name="stunServer" placeholder="(optional, behind NAT) stun.example.org:3478"></label>
+          <div class="grid2">
+            <label>Transport
+              <select name="transport"><option value="udp">UDP</option><option value="tcp">TCP</option></select>
+            </label>
+            <label>Local SIP port<input name="sipPort" type="number" min="0" max="65535" placeholder="0 = auto"></label>
+          </div>
+          <label class="check"><input name="register" type="checkbox"> Send REGISTER</label>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Apply</button>
+            <button type="button" id="registerBtn" class="btn btn-ghost">Register</button>
+            <button type="button" id="unregisterBtn" class="btn btn-ghost">Unregister</button>
+          </div>
+          <p id="readyInfo" class="hint"></p>
+        </form>
+      </details>
+
+      <section class="card dialer">
+        <div class="target-row">
+          <input id="target" class="target" placeholder="sip:bob@127.0.0.1:5070" spellcheck="false" autocomplete="off" aria-label="Target SIP URI">
+        </div>
+        <div class="call-buttons">
+          <button id="callBtn" class="btn btn-call" type="button"><svg><use href="#i-phone"/></svg>Call</button>
+          <button id="videoCallBtn" class="btn btn-call" type="button"><svg><use href="#i-video"/></svg>Video call</button>
+        </div>
+        <div id="dialpad" class="dialpad" aria-label="Dial pad"></div>
+        <div class="dialer-foot">
+          <label class="check"><input id="autoAnswer" type="checkbox"> Auto-answer</label>
+          <span id="dtmfInfo" class="hint"></span>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Center column: call -->
+    <section class="col col-center">
+      <div id="incomingBanner" class="incoming" hidden>
+        <div class="incoming-info">
+          <span class="ring-dot"></span>
+          <div>
+            <div class="incoming-title">Incoming <span id="incomingKind">call</span></div>
+            <div id="incomingFrom" class="incoming-from"></div>
+          </div>
+        </div>
+        <div class="incoming-actions">
+          <button id="answerBtn" class="btn btn-call js-answer" type="button"><svg><use href="#i-phone"/></svg>Answer</button>
+          <button id="answerVideoBtn" class="btn btn-call js-answer-video" type="button"><svg><use href="#i-video"/></svg>Answer with video</button>
+          <button id="rejectBtn" class="btn btn-hangup js-reject" type="button"><svg><use href="#i-hangup"/></svg>Reject</button>
+        </div>
+      </div>
+
+      <div id="stage" class="stage">
+        <canvas id="remoteVideo" class="remote-video" hidden></canvas>
+        <div id="stagePlaceholder" class="placeholder">
+          <div id="avatar" class="avatar">?</div>
+          <div id="placeholderName" class="placeholder-name">No call</div>
+          <div id="placeholderText" class="placeholder-text">Enter a SIP URI and press Call</div>
+        </div>
+        <div class="stage-top">
+          <span id="stageState" class="state-chip state-idle">IDLE</span>
+          <span id="stageRemote" class="stage-remote"></span>
+          <span id="callTimer" class="call-timer"></span>
+        </div>
+        <div id="pip" class="pip" hidden>
+          <canvas id="localVideo"></canvas>
+          <span class="pip-label">You</span>
+        </div>
+        <div id="meters" class="stage-meters" title="Microphone / speaker level" hidden>
+          <span class="k">Mic</span><span class="meter"><span id="micMeter"></span></span>
+          <span class="k">Spk</span><span class="meter"><span id="spkMeter"></span></span>
+        </div>
+        <button id="audioUnlock" class="unlock" type="button" hidden>Click to enable audio</button>
+        <div id="webcodecsWarning" class="stage-warning" hidden>
+          WebCodecs is not available in this browser: video is disabled, audio only.
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="muteBtn" class="ctl" type="button" aria-pressed="false"><svg><use href="#i-mic"/></svg><span>Mute</span></button>
+        <button id="cameraBtn" class="ctl" type="button" aria-pressed="false"><svg><use href="#i-video"/></svg><span>Camera</span></button>
+        <button id="holdBtn" class="ctl" type="button" disabled><svg><use href="#i-pause"/></svg><span>Hold</span></button>
+        <button id="hangupBtn" class="ctl ctl-red" type="button" disabled><svg><use href="#i-hangup"/></svg><span>Hang up</span></button>
+      </div>
+
+      <div class="statusbar">
+        <div class="status-item"><span class="k">Call</span><span id="stCall" class="v">IDLE</span></div>
+        <div class="status-item grow"><span class="k">Remote</span><span id="stRemote" class="v">–</span></div>
+        <div class="status-item"><span class="k">Codecs</span><span id="stCodecs" class="v">–</span></div>
+        <div class="status-item"><span class="k">Reg</span><span id="stReg" class="v">–</span></div>
+      </div>
+    </section>
+
+    <!-- Right column: trace / messages / stats -->
+    <aside class="col col-right">
+      <nav class="tabs" role="tablist">
+        <button class="tab" role="tab" data-tab="trace" type="button">SIP trace <span id="traceCount" class="badge"></span></button>
+        <button class="tab" role="tab" data-tab="messages" type="button">Messages <span id="msgBadge" class="badge badge-accent"></span></button>
+        <button class="tab" role="tab" data-tab="stats" type="button">Stats</button>
+      </nav>
+
+      <section class="tabpanel" id="tab-trace" role="tabpanel">
+        <div class="toolbar">
+          <input id="traceFilter" class="filter" placeholder="Filter (e.g. INVITE, Call-ID…)" spellcheck="false">
+          <label class="check small"><input id="traceAutoscroll" type="checkbox" checked> Follow</label>
+          <button id="traceClear" class="btn btn-ghost btn-sm" type="button">Clear</button>
+        </div>
+        <div class="ladder-head"><span>time</span><span>local</span><span></span><span>remote</span></div>
+        <div id="traceList" class="trace-list"></div>
+      </section>
+
+      <section class="tabpanel" id="tab-messages" role="tabpanel" hidden>
+        <div id="chatList" class="chat-list">
+          <div class="empty">No messages yet. Messages are sent as SIP MESSAGE requests.</div>
+        </div>
+        <form id="chatForm" class="chat-form" autocomplete="off">
+          <input id="chatTarget" placeholder="To: sip:bob@127.0.0.1:5070" spellcheck="false">
+          <div class="chat-send">
+            <input id="chatText" placeholder="Type a message…">
+            <button class="btn btn-primary" type="submit">Send</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="tabpanel" id="tab-stats" role="tabpanel" hidden>
+        <div id="statsView" class="stats"></div>
+      </section>
+    </aside>
+  </main>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
