@@ -9,7 +9,8 @@
 | Tests | JUnit 6 (Jupiter) + AssertJ; Playwright/Chromium for the web E2E script |
 | Terminal UI | JLine 3 |
 | JSON (web client) | Jackson |
-| CI | GitHub Actions `.github/workflows/build.yml` runs `./gradlew build` |
+| CI | GitHub Actions `.github/workflows/build.yml` runs `./gradlew build` when a release is published (or manually) |
+| Interop | local Asterisk harness in `interop/asterisk` |
 
 ## Common commands
 

@@ -12,6 +12,7 @@
 | [protocol/rtp-media.md](protocol/rtp-media.md) | RTP/RTCP sessions, audio, DTMF, video packetization |
 | [guides/library-usage.md](guides/library-usage.md) | using the jar: calls, automation helpers, configuration |
 | [guides/extending.md](guides/extending.md) | adding methods, headers, transports, codecs, payload formats |
+| [guides/testing-with-real-sip-services.md](guides/testing-with-real-sip-services.md) | Google Voice, free SIP services, local Asterisk interop |
 | [clients/terminal-softphone.md](clients/terminal-softphone.md) | terminal client usage and batch automation |
 | [clients/web-softphone.md](clients/web-softphone.md) | web client (audio + video) |
 | [clients/web-softphone-protocol.md](clients/web-softphone-protocol.md) | browser ⇄ server WebSocket protocol |

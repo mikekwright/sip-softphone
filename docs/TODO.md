@@ -17,7 +17,9 @@
 - [ ] Approve spec 019 (`docs/specs/019-library-first-netty-softphone/approval.md`)
 - [ ] Publish `softphone-lib` to Maven Central (signing keys + Sonatype credentials in CI)
 - [ ] Run the web E2E script in CI (Playwright container job)
-- [ ] Interop runs against Asterisk / FreeSWITCH / Kamailio (registration, auth, re-INVITE, DTMF)
+- [x] Interop with Asterisk 20 (registration, auth, B2BUA calls, re-INVITE hold, DTMF, TCP, VP8 relay) - `interop/asterisk`
+- [ ] Interop with FreeSWITCH / Kamailio and public providers (Linphone, sip2sip)
+- [ ] Re-enable CI on push / pull request (currently release-only)
 - [ ] PRACK / 100rel (RFC 3262) and UPDATE (RFC 3311)
 - [ ] Session timers (RFC 4028)
 - [ ] REFER / blind and attended transfer (RFC 3515, RFC 3891)

@@ -98,6 +98,7 @@ Details: [docs/architecture/overview.md](docs/architecture/overview.md).
   [call flows (ladders)](docs/protocol/call-flows.md), [SDP](docs/protocol/sdp-offer-answer.md),
   [RTP & media](docs/protocol/rtp-media.md)
 * Clients: [web softphone](docs/clients/web-softphone.md), [terminal softphone](docs/clients/terminal-softphone.md)
+* [Testing against real SIP services](docs/guides/testing-with-real-sip-services.md) and the [Asterisk interop harness](interop/asterisk/README.md)
 * [Specification references](docs/references.md) — every RFC used and where it is implemented
 * [Spec 019](docs/specs/019-library-first-netty-softphone/spec.md) — the decision record for this design
 
