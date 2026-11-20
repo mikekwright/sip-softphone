@@ -1,173 +1,113 @@
 # SIP Softphone
 
-This repository is being restarted as a Java-first SIP softphone platform with two primary entry points:
+A SIP softphone delivered as a **Java library** for automated call flows and SIP testing, built on
+**Netty**, with two sample clients:
 
-- an stdio-only MCP server for LLM-driven phone workflows
-- a functional terminal UI that exercises the same shared softphone API
+| Module | What it is |
+|--------|------------|
+| [`softphone-lib`](softphone-lib) | The jar. SIP (RFC 3261), SDP offer/answer (RFC 8866/3264), RTP/RTCP (RFC 3550), DTMF (RFC 4733), G.711, VP8/H.264 RTP payloads — every packet built and parsed with Netty. |
+| [`clients/web-softphone`](clients/web-softphone) | Browser softphone with **audio and video** (WebCodecs + AudioWorklet), backed by a Netty gateway that runs one `Softphone` per tab. |
+| [`clients/terminal-softphone`](clients/terminal-softphone) | Terminal softphone (audio only) with an interactive shell and a scriptable batch mode for tests. |
 
-## Project Status
+![Web softphone video call](docs/images/web-softphone-video-call.png)
 
-This is a modernization and restart effort.
+## Quick start
 
-The current repository still contains a legacy Gradle multi-project layout with `lib/` and `sample-client/`, but the target system is broader than the original library-oriented codebase. The existing code is migration input, not the final architecture.
+Requirements: JDK 21+. Everything else comes through the Gradle wrapper.
 
-## Purpose
-
-The project goal is to provide a SIP softphone runtime that can be automated by an MCP client while also remaining usable through a human-operated terminal interface.
-
-The shared runtime must support:
-
-- making a call
-- receiving live call updates
-- capturing speech from the remote side and returning text
-- accepting text from the client and injecting it into the active call
-- hanging up the call
-
-## What This Project Is
-
-- a Java-first softphone modernization effort
-- a shared call-control and event API for multiple front ends
-- a Netty-centered runtime direction
-- a repository that will grow specs and scenario-driven workflow documentation
-
-## What This Project Is Not
-
-- not primarily a reusable published SIP library
-- not a Kotlin- or Scala-led codebase going forward
-- not a GUI desktop client
-- not a network-exposed MCP service; the MCP server is stdio-only
-
-## Required End State
-
-The target implementation should provide:
-
-1. a modern Gradle build using a current stable Gradle release
-2. a current stable Java baseline, with Java 21 preferred and Java 17 acceptable only if dependency compatibility requires it
-3. a shared API that can power both the MCP server and the terminal UI
-4. a Netty-aligned runtime model for sessions, timers, and streamed events
-5. clear separation between implementation specs and validation scenarios
-
-## Core Functional Requirements
-
-The MCP-facing system must support these workflows:
-
-- start a call
-- observe long-lived call progress without losing session context
-- listen for remote speech and return transcript events
-- wait for remote silence and complete after 3 seconds of silence
-- send text into the call flow
-- hang up cleanly
-
-The TUI must use the same shared call and event APIs rather than maintaining a separate call stack.
-
-## Current Repository State
-
-### Existing modules
-
-- `lib/`
-  - legacy SIP library module
-  - contains mixed Java and Kotlin code
-  - includes JAIN SIP setup helpers, partial SDP models, and stubbed softphone behavior
-- `sample-client/`
-  - legacy sample executable
-  - currently not a functional client or TUI
-
-### Legacy build constraints
-
-- Gradle 3.3-era conventions
-- Java 8 target
-- Kotlin 1.0.4
-- ScalaTest-era test setup
-- deprecated Gradle configurations and plugins
-- old publishing and CI assumptions
-
-## Recommended Architecture Direction
-
-The repository should remain multi-project, but responsibilities should shift toward a shared core and focused runtime layers.
-
-### Transitional module direction
-
-- `lib/`
-  - short-term migration module
-  - source of reusable legacy SIP and SDP knowledge
-  - likely reduced over time as new modules take ownership
-- `sample-client/`
-  - short-term transition harness
-  - long-term functional TUI
-
-### Planned module direction
-
-- `softphone-core`
-  - shared Java domain API
-  - call sessions, commands, events, transcript flow, text injection contracts
-- `softphone-runtime` or `softphone-sip`
-  - SIP signaling, session lifecycle runtime, timers, media integration, Netty alignment
-- `softphone-mcp`
-  - stdio MCP server implementation over the shared API
-- `sample-client/`
-  - TUI that consumes only shared APIs
-
-## Modernization Strategy
-
-Work should proceed incrementally:
-
-1. document the restart direction and workflow
-2. stabilize the build around current Gradle and Java
-3. define the shared Java API before major implementation work
-4. establish the Netty runtime and session model
-5. add the stdio MCP server on the shared API
-6. evolve `sample-client/` into the functional TUI
-7. add scenario-driven validation and operational hardening
-
-## Documentation Map
-
-- `docs/README.md`
-  - documentation entry point and folder layout
-- `docs/architecture/overview.md`
-  - what the project is and the target architecture
-- `docs/architecture/project-structure-and-namespaces.md`
-  - module layout, package rules, and namespace boundaries
-- `docs/architecture/tooling-and-build.md`
-  - Java, Gradle, testing, and tooling policy
-- `docs/specs/README.md`
-  - numbered spec workflow and ownership rules
-- `docs/scenarios/README.md`
-  - validation and scenario boundary
-- `docs/TODO.md`
-  - ordered work backlog for completing the restart
-
-## Spec Workflow
-
-This project uses numbered specs under `docs/specs/`.
-
-Each spec lives in its own folder:
-
-```text
-docs/specs/NNN-short-name/
-  spec.md
-  implementation.md
-  approval.md
+```bash
+./gradlew build                                    # compile + ~190 tests + javadoc
 ```
 
-Rules:
+**Library** — place an automated call:
 
-- `spec.md` is ADR-style and describes one clear change
-- `implementation.md` turns the spec into execution steps
-- `approval.md` records who approved the spec and when
-- all agents may read specs
-- only the architect may edit specs
+```java
+try (Softphone phone = Softphone.create(SoftphoneConfig.builder()
+        .user("tester").domain("pbx.example.com").password("secret").sipPort(0).build()).start().join()) {
 
-## Risks and Constraints
+    Call call = phone.call("sip:ivr@pbx.example.com");
+    RecordingSink heard = new RecordingSink();
+    call.setAudioSink(heard);
+    call.setAudioSource(new ToneSource(440, 0.3));
+    call.connected().get(30, TimeUnit.SECONDS);
 
-- legacy JAIN SIP compatibility may constrain the Java baseline
-- the current repo does not yet contain a working end-to-end call flow
-- media, transcription, and text-injection behavior will require substantial new implementation beyond the legacy library
-- MCP long-lived interaction semantics must be defined explicitly before implementation
+    call.sendDtmf("1234#").join();          // RFC 4733
+    call.hold().join();                     // re-INVITE a=sendonly
+    call.resume().join();
+    call.hangup();                          // BYE
+    System.out.println(call.ended().join());
+}
+```
 
-## Immediate Next Steps
+**Web client** — `./gradlew :clients:web-softphone:run`, open two tabs:
+`http://localhost:8080/?user=bob&sipPort=5090` and `http://localhost:8080/?user=alice`, then video-call
+`sip:bob@127.0.0.1:5090` from alice.
 
-1. approve the initial documentation and spec workflow
-2. approve the first build modernization spec
-3. modernize the build and establish the Java baseline
-4. define the shared call-control and event model
-5. implement the runtime, MCP server, and TUI in that order
+**Terminal client**:
+
+```bash
+./gradlew :clients:terminal-softphone:installDist
+T=clients/terminal-softphone/build/install/terminal-softphone/bin/terminal-softphone
+$T --user bob --port 5070 --auto-answer --audio echo        # an echo endpoint
+$T --user alice --port 0 --batch --exec "call sip:bob@127.0.0.1:5070; await connected 5; dtmf 123; wait 2; hangup"
+```
+
+## What is implemented
+
+**SIP** — parser for the full RFC 3261 grammar (compact forms, folding, list headers), UDP / TCP / TLS transports
+with `rport` (RFC 3581) and CRLF keep-alive (RFC 5626), RFC 3263 resolution (SRV + A), the four transaction state
+machines with all timers and the RFC 6026 *Accepted* state, dialogs with route sets and strict/loose routing,
+digest authentication (MD5, SHA-256, SHA-512/256, qop auth/auth-int), REGISTER with refresh and 423 handling,
+INVITE with early dialogs, forking, 2xx retransmission, CANCEL, BYE, re-INVITE/hold with 491 glare handling,
+INFO, MESSAGE, OPTIONS, and the UAS checks of §8.2 (405/420/481/501).
+
+**SDP** — complete RFC 8866 model, lenient parser, writer, RFC 3264 negotiator (payload type mapping, direction
+and hold, rtcp-mux, telephone-event, rejection with port 0, 488 when nothing matches).
+
+**Media** — RTP/RTCP packets and sessions (SR/RR/SDES/BYE, PLI, FIR, NACK, statistics per RFC 3550 appendix A,
+rtcp-mux, symmetric RTP), jitter buffer, G.711 μ/A-law, L16, RFC 4733 DTMF with in-band fallback, VP8 and
+H.264 packetizers/depacketizers with loss detection and key frame requests.
+
+**Automation hooks** — futures for every milestone, `awaitState`, message interceptors (trace / assert / drop /
+rewrite), Netty pipeline customizers, tone/WAV sources, recording sinks with tone detection, shrinkable SIP
+timers, ephemeral ports for parallel tests.
+
+## Architecture
+
+```
+ Softphone / Call                      automation facade (call package)
+ sip.session · sip.flow                INVITE session, REGISTER, generic requests with auth
+ sip.core                              UA core: routing, request validation, dialog dispatch
+ sip.dialog · sip.transaction          RFC 3261 §12 and §17
+ sip.transport · sip.codec             Netty UDP/TCP/TLS, framing, resolver
+ sip.message · sip.parser · sip.auth   message model and grammar, digest
+ sdp                                   RFC 8866 / RFC 3264
+ media · rtp                           RTP/RTCP, codecs, DTMF, video payloads
+ Netty
+```
+
+SIP, SDP and media are independent of each other; only the `call` layer joins them. All SIP state runs on one
+executor thread (no locks), network I/O on Netty event loops, and listener callbacks on a per-phone event thread.
+Details: [docs/architecture/overview.md](docs/architecture/overview.md).
+
+## Documentation
+
+* [docs/README.md](docs/README.md) — index
+* [Library usage](docs/guides/library-usage.md) and [extending the library](docs/guides/extending.md)
+* Protocol notes: [SIP layers](docs/protocol/sip-layers.md), [transactions](docs/protocol/transactions.md),
+  [call flows (ladders)](docs/protocol/call-flows.md), [SDP](docs/protocol/sdp-offer-answer.md),
+  [RTP & media](docs/protocol/rtp-media.md)
+* Clients: [web softphone](docs/clients/web-softphone.md), [terminal softphone](docs/clients/terminal-softphone.md)
+* [Specification references](docs/references.md) — every RFC used and where it is implemented
+* [Spec 019](docs/specs/019-library-first-netty-softphone/spec.md) — the decision record for this design
+
+## Build reference
+
+```bash
+./gradlew :softphone-lib:test                     # library tests
+./gradlew :softphone-lib:publishToMavenLocal      # use the jar from other local projects
+./gradlew :clients:web-softphone:run --args="--http-port 8080"
+./gradlew :clients:terminal-softphone:run --args="--user alice --port 5080"
+```
+
+Java 21 · Gradle 9 (wrapper) · Netty 4.2 · JUnit 6 · MIT License

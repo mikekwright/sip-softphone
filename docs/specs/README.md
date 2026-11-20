@@ -1,5 +1,9 @@
 # Specs
 
+> **Current direction:** spec [019](019-library-first-netty-softphone/spec.md) re-scopes the project to a
+> library-first Netty softphone with web and terminal clients. Specs 001-018 are earlier drafts for an
+> MCP-server direction and are kept for history; where they conflict with 019, 019 applies.
+
 This folder contains the numbered implementation specs for the SIP softphone restart.
 
 ## Folder Format

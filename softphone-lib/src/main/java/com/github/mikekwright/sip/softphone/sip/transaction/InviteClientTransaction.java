@@ -26,7 +26,7 @@ import com.github.mikekwright.sip.softphone.sip.transport.TransportAddress;
  *            |  to TU +--|            |            |     |
  *            |        +->+------------+            V     |
  *            |                | 300-699     +-----------+ 2xx to TU
- *            |                | ACK sent    |  Accepted |<-+
+ *            |                | ACK sent    |  Accepted |&lt;-+
  *            |                V resp to TU  +-----------+
  *            +---------->+-----------+            | Timer M
  *          300-699       | Completed |            |
