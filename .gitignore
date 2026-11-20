@@ -19,3 +19,4 @@ target
 *.wav
 !**/src/test/resources/**/*.wav
 node_modules/
+.claude/worktrees/
